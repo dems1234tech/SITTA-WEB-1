@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - SITTA</title>
+  <meta name="description" content="Login ke Sistem Informasi Transaksi & Tracking Bahan Ajar Universitas Terbuka"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span>⬡ SITTA</span>
+    </div>
+    <ul>
+      <li><a href="index.html" class="active">Login</a></li>
+    </ul>
+  </nav>
+
+  <!-- LOGIN CONTAINER -->
+  <div class="login-container">
+    <div class="login-logo">
+      <img src="assets/logo-ut.jpeg" alt="Logo Universitas Terbuka" style="width: 120px; height: auto; margin-bottom: 10px;">
+    </div>
+    <h2>Login Aplikasi SITTA</h2>
+    <p style="color:var(--text-muted); font-size:14px; margin-top:-16px; margin-bottom:24px;">
+      Sistem Informasi Transaksi &amp; Tracking Bahan Ajar
+    </p>
+
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="email@ut.ac.id" required/>
+
+      <label for="password">Password</label>
+      <div style="position:relative;">
+        <input type="password" id="password" placeholder="Masukkan password" required/>
+        <span id="togglePwd" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-muted);">
+          <i class="fas fa-eye"></i>
+        </span>
+      </div>
+
+      <button type="submit" class="btn" id="loginBtn">
+        <i class="fas fa-sign-in-alt"></i> Masuk
+      </button>
+    </form>
+
+    <div class="links">
+      <a href="#" id="forgotLink">Lupa Password?</a> &nbsp;|&nbsp;
+      <a href="#" id="registerLink">Daftar</a>
+    </div>
+  </div>
+
+  <!-- FORGOT PASSWORD MODAL -->
+  <div class="modal" id="forgotModal">
+    <div class="modal-content">
+      <span class="close" id="closeForgot">&times;</span>
+      <h3><i class="fas fa-key"></i> Lupa Password</h3>
+      <p style="color:var(--text-muted); font-size:14px;">
+        Silakan hubungi admin UT daerah untuk reset password Anda.
+      </p>
+      <button class="btn" onclick="document.getElementById('forgotModal').classList.remove('show')">Mengerti</button>
+    </div>
+  </div>
+
+  <!-- REGISTER MODAL -->
+  <div class="modal" id="registerModal">
+    <div class="modal-content" style="max-width:480px;">
+      <span class="close" id="closeRegister">&times;</span>
+      <h3><i class="fas fa-user-plus"></i> Form Pendaftaran</h3>
+      <form id="registerForm">
+        <label for="regNama">Nama Lengkap</label>
+        <input type="text" id="regNama" placeholder="Nama lengkap Anda" required/>
+        <label for="regEmail">Email</label>
+        <input type="email" id="regEmail" placeholder="email@ut.ac.id" required/>
+        <label for="regLokasi">Lokasi UPBJJ</label>
+        <input type="text" id="regLokasi" placeholder="Contoh: UPBJJ Jakarta" required/>
+        <label for="regPwd">Password</label>
+        <input type="password" id="regPwd" placeholder="Buat password" required/>
+        <button type="submit" class="btn"><i class="fas fa-user-check"></i> Daftar Sekarang</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    // Cek jika sudah login
+    if (sessionStorage.getItem('loggedIn') === 'true') {
+      window.location.href = 'dashboard.html';
+    }
+
+    // Toggle password visibility
+    document.getElementById('togglePwd').addEventListener('click', function() {
+      const pwd = document.getElementById('password');
+      const icon = this.querySelector('i');
+      if (pwd.type === 'password') {
+        pwd.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        pwd.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    });
+
+    // Login form
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('loginBtn');
+
+      // Get users from storage or use default data
+      const pengguna = JSON.parse(localStorage.getItem('dataPengguna')) || dataPengguna;
+      const user = pengguna.find(u => u.email === email && u.password === password);
+
+      if (user) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+        sessionStorage.setItem('loggedIn', 'true');
+        sessionStorage.setItem('userName', user.nama);
+        sessionStorage.setItem('userRole', user.role);
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 900);
+      } else {
+        document.getElementById('loginForm').classList.add('shake');
+        setTimeout(() => document.getElementById('loginForm').classList.remove('shake'), 400);
+        alert('Email atau password salah! Coba: rina@ut.ac.id / rina123');
+      }
+    });
+
+    // Modals
+    document.getElementById('forgotLink').onclick = (e) => { e.preventDefault(); document.getElementById('forgotModal').classList.add('show'); };
+    document.getElementById('registerLink').onclick = (e) => { e.preventDefault(); document.getElementById('registerModal').classList.add('show'); };
+    document.getElementById('closeForgot').onclick = () => document.getElementById('forgotModal').classList.remove('show');
+    document.getElementById('closeRegister').onclick = () => document.getElementById('registerModal').classList.remove('show');
+
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Pendaftaran berhasil! Silakan login dengan akun baru Anda.');
+      document.getElementById('registerModal').classList.remove('show');
+    });
+  </script>
+</body>
+</html>

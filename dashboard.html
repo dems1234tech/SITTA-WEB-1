@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard SITTA</title>
+  <meta name="description" content="Dashboard utama Sistem Informasi Transaksi & Tracking Bahan Ajar Universitas Terbuka"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span>⬡ SITTA</span>
+    </div>
+    <ul>
+      <li><a href="dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+      <li><a href="stok.html"><i class="fas fa-boxes"></i> Informasi Bahan Ajar</a></li>
+      <li><a href="tracking.html"><i class="fas fa-truck"></i> Tracking Pengiriman</a></li>
+      <li class="dropdown" id="laporanDropdown">
+        <a href="#" onclick="toggleDropdown(event)"><i class="fas fa-chart-bar"></i> Laporan ▾</a>
+        <div class="dropdown-content" id="laporanMenu">
+          <a href="histori.html"><i class="fas fa-history"></i> Histori Transaksi</a>
+          <a href="tracking.html"><i class="fas fa-shipping-fast"></i> Monitoring Progress DO</a>
+          <a href="stok.html"><i class="fas fa-book"></i> Rekap Bahan Ajar</a>
+        </div>
+      </li>
+      <li><a href="index.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="content">
+    <div style="margin-bottom:24px;">
+      <h1 id="welcomeTitle">Selamat Datang, Pengguna</h1>
+      <p style="color:var(--text-muted); margin-top:-10px;">Berikut adalah ringkasan operasional SITTA hari ini.</p>
+    </div>
+
+    <!-- STATS GRID -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(59,130,246,0.15); color:#3b82f6;">
+          <i class="fas fa-book-open"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statTotalStok">0</h3>
+          <p>Total Stok Bahan Ajar</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(16,185,129,0.15); color:#10b981;">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statDOSelesai">0</h3>
+          <p>DO Selesai (Bulan Ini)</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(234,179,8,0.15); color:#eab308;">
+          <i class="fas fa-truck-loading"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statDOProses">0</h3>
+          <p>DO Dalam Proses</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(239,68,68,0.15); color:#ef4444;">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="stat-info">
+          <h3 id="statStokLimit">0</h3>
+          <p>Bahan Ajar Stok Limit</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TWO COLUMN LAYOUT -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:10px;">
+
+      <!-- AKTIVITAS TERKINI -->
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h2 style="font-size:18px; margin:0;"><i class="fas fa-bell"></i> Aktivitas Terkini</h2>
+          <a href="histori.html" style="color:var(--primary); font-size:13px; text-decoration:none;">Lihat Semua →</a>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Pengguna</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="aktivitasTable">
+              <tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STOK PER BAHAN AJAR -->
+      <div>
+        <h2 style="font-size:18px; margin-bottom:12px;"><i class="fas fa-chart-bar"></i> Stok per Bahan Ajar</h2>
+        <div id="stokProgressList" style="display:flex; flex-direction:column; gap:14px;"></div>
+      </div>
+    </div>
+
+    <!-- TRANSAKSI PER PENGGUNA -->
+    <div style="margin-top:28px;" id="userTransactionSection">
+      <h2 style="font-size:18px; margin-bottom:12px;"><i class="fas fa-users"></i> Transaksi per Pengguna</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nama Pengguna</th>
+              <th>Jumlah Transaksi</th>
+              <th>Total Item</th>
+              <th>Status Terakhir</th>
+            </tr>
+          </thead>
+          <tbody id="transaksiUserTable">
+            <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    // Auth check
+    if (sessionStorage.getItem('loggedIn') !== 'true') window.location.href = 'index.html';
+
+    const userName = sessionStorage.getItem('userName') || 'Pengguna';
+    document.getElementById('welcomeTitle').textContent = `Selamat Datang, ${userName}`;
+
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+      e.preventDefault();
+      sessionStorage.clear();
+      window.location.href = 'index.html';
+    });
+
+    // Dropdown
+    function toggleDropdown(e) {
+      e.preventDefault();
+      document.getElementById('laporanDropdown').classList.toggle('show');
+    }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#laporanDropdown')) {
+        document.getElementById('laporanDropdown').classList.remove('show');
+      }
+    });
+
+    // Load data function
+    function loadDashboardData() {
+      const stockData = JSON.parse(localStorage.getItem('stockStore')) || dataBahanAjar;
+      let historyData = JSON.parse(localStorage.getItem('historyStore')) || dataHistory;
+
+      // Filter history based on role (Non-admin only sees their own)
+      if (userRole !== 'Administrator' && userRole !== 'Puslaba') {
+        historyData = historyData.filter(h => h.pengguna === userName);
+      }
+
+      // Stats
+      const totalStok = stockData.reduce((s, i) => s + i.stok, 0);
+      const doSelesai = historyData.filter(h => h.status === 'Selesai').length;
+      const doProses = historyData.filter(h => h.status === 'Proses').length;
+      const stokLimit = stockData.filter(s => s.stok < (s.limit * 0.3)).length;
+
+      document.getElementById('statTotalStok').textContent = totalStok.toLocaleString('id-ID');
+      document.getElementById('statDOSelesai').textContent = doSelesai;
+      document.getElementById('statDOProses').textContent = doProses;
+      document.getElementById('statStokLimit').textContent = stokLimit;
+
+      // Aktivitas Terkini (5 terakhir)
+      const recent = [...historyData].reverse().slice(0, 5);
+      const tbody = document.getElementById('aktivitasTable');
+      tbody.innerHTML = recent.map(h => `
+        <tr>
+          <td>${h.tanggal}</td>
+          <td>${h.pengguna}</td>
+          <td><span class="badge badge-${h.status === 'Selesai' ? 'success' : 'warning'}">${h.status}</span></td>
+        </tr>
+      `).join('') || `<tr><td colspan="3" style="text-align:center;">Tidak ada data</td></tr>`;
+
+      // Stok Progress
+      const progressList = document.getElementById('stokProgressList');
+      progressList.innerHTML = stockData.map(s => {
+        const pct = Math.round((s.stok / s.limit) * 100);
+        const color = pct < 30 ? '#ef4444' : pct < 60 ? '#eab308' : '#10b981';
+        return `
+          <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:13px; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <img src="${s.cover || 'https://via.placeholder.com/30'}" style="width:24px; height:32px; object-fit:cover; border-radius:3px;">
+                <span style="font-weight:600;">${s.namaBarang}</span>
+              </div>
+              <span style="color:var(--text-muted);">${s.stok} / ${s.limit}</span>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar" style="width:${pct}%; background:${color};"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Transaksi per Pengguna
+      const userMap = {};
+      historyData.forEach(h => {
+        if (!userMap[h.pengguna]) userMap[h.pengguna] = { count: 0, total: 0, lastStatus: h.status };
+        userMap[h.pengguna].count++;
+        userMap[h.pengguna].total += h.jumlah;
+        userMap[h.pengguna].lastStatus = h.status;
+      });
+      
+      const userSection = document.getElementById('userTransactionSection');
+      if (userRole !== 'Administrator' && userRole !== 'Puslaba') {
+        userSection.style.display = 'none';
+      }
+
+      const userTable = document.getElementById('transaksiUserTable');
+      userTable.innerHTML = Object.entries(userMap).map(([nama, val], i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><i class="fas fa-user-circle" style="color:var(--primary); margin-right:8px;"></i>${nama}</td>
+          <td>${val.count}</td>
+          <td>${val.total} eks</td>
+          <td><span class="badge badge-${val.lastStatus === 'Selesai' ? 'success' : 'warning'}">${val.lastStatus}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // Initial load
+    loadDashboardData();
+
+    // Real-time update from other tabs
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'historyStore' || e.key === 'stockStore') {
+        loadDashboardData();
+      }
+    });
+  </script>
+</body>
+</html>

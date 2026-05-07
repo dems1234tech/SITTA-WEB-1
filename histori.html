@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Histori Transaksi - SITTA</title>
+  <meta name="description" content="Riwayat transaksi bahan ajar Universitas Terbuka"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-brand"><span>⬡ SITTA</span></div>
+    <ul>
+      <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+      <li><a href="stok.html"><i class="fas fa-boxes"></i> Informasi Bahan Ajar</a></li>
+      <li><a href="tracking.html"><i class="fas fa-truck"></i> Tracking Pengiriman</a></li>
+      <li class="dropdown" id="laporanDropdown">
+        <a href="#" onclick="toggleDropdown(event)"><i class="fas fa-chart-bar"></i> Laporan ▾</a>
+        <div class="dropdown-content" id="laporanMenu">
+          <a href="histori.html" class="active"><i class="fas fa-history"></i> Histori Transaksi</a>
+          <a href="tracking.html"><i class="fas fa-shipping-fast"></i> Monitoring Progress DO</a>
+          <a href="stok.html"><i class="fas fa-book"></i> Rekap Bahan Ajar</a>
+        </div>
+      </li>
+      <li><a href="index.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h1 style="font-size:22px; margin:0;"><i class="fas fa-history"></i> Histori Transaksi</h1>
+        <p style="color:var(--text-muted); margin:4px 0 0; font-size:14px;">Riwayat lengkap semua transaksi bahan ajar.</p>
+      </div>
+      <button class="btn btn-small" onclick="exportCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <i class="fas fa-search" style="color:var(--text-muted);"></i>
+        <input type="text" id="searchHistori" placeholder="Cari nama, DO, atau bahan ajar..." oninput="renderHistori()"/>
+      </div>
+      <div class="filter-group small">
+        <select id="filterStatus" onchange="renderHistori()">
+          <option value="">Semua Status</option>
+          <option value="Selesai">Selesai</option>
+          <option value="Proses">Proses</option>
+        </select>
+      </div>
+      <div class="filter-group small">
+        <input type="date" id="filterTanggal" onchange="renderHistori()" style="width:auto;"/>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tanggal</th>
+            <th>No. DO</th>
+            <th>Pengguna</th>
+            <th>Bahan Ajar</th>
+            <th>Jumlah</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="historiTable">
+          <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SUMMARY -->
+    <div id="historiSummary" style="margin-top:16px; font-size:13px; color:var(--text-muted);"></div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    if (sessionStorage.getItem('loggedIn') !== 'true') window.location.href = 'index.html';
+
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+      e.preventDefault(); sessionStorage.clear(); window.location.href = 'index.html';
+    });
+
+    function toggleDropdown(e) {
+      e.preventDefault();
+      document.getElementById('laporanDropdown').classList.toggle('show');
+    }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#laporanDropdown')) document.getElementById('laporanDropdown').classList.remove('show');
+    });
+
+    function renderHistori() {
+      const historyData = JSON.parse(localStorage.getItem('historyStore')) || dataHistory;
+      const search = document.getElementById('searchHistori').value.toLowerCase();
+      const status = document.getElementById('filterStatus').value;
+      const tanggal = document.getElementById('filterTanggal').value;
+
+      const currentUserName = sessionStorage.getItem('userName');
+      const currentUserRole = sessionStorage.getItem('userRole');
+
+      let filtered = historyData.filter(h => {
+        const matchSearch = !search || h.do.includes(search) || h.pengguna.toLowerCase().includes(search) || h.bahanAjar.toLowerCase().includes(search);
+        const matchStatus = !status || h.status === status;
+        const matchTanggal = !tanggal || h.tanggal === tanggal;
+        
+        // Filter by user unless admin/pusat
+        const isAuthorized = (currentUserRole === 'Administrator' || currentUserRole === 'Puslaba');
+        const matchUser = isAuthorized || h.pengguna === currentUserName;
+        
+        return matchSearch && matchStatus && matchTanggal && matchUser;
+      });
+
+      const tbody = document.getElementById('historiTable');
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Tidak ada data yang cocok</td></tr>`;
+        document.getElementById('historiSummary').textContent = '';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((h, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${h.tanggal}</td>
+          <td><code style="color:var(--secondary); font-size:12px;">${h.do}</code></td>
+          <td><i class="fas fa-user-circle" style="color:var(--primary); margin-right:6px;"></i>${h.pengguna}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${(function(){
+                const book = dataBahanAjar.find(b => b.namaBarang === h.bahanAjar);
+                return `<img src="${book ? book.cover : 'https://via.placeholder.com/30'}" style="width:24px; height:32px; object-fit:cover; border-radius:3px;">`;
+              })()}
+              ${h.bahanAjar}
+            </div>
+          </td>
+          <td><strong>${h.jumlah}</strong> eks</td>
+          <td><span class="badge badge-${h.status === 'Selesai' ? 'success' : 'warning'}">${h.status}</span></td>
+          <td>
+            <a href="tracking.html?do=${h.do}" class="btn btn-small" style="background:var(--surface); border:1px solid var(--border); color:var(--text-main); text-decoration:none;">
+              <i class="fas fa-search"></i> Lacak
+            </a>
+          </td>
+        </tr>
+      `).join('');
+
+      const totalItem = filtered.reduce((s, h) => s + h.jumlah, 0);
+      document.getElementById('historiSummary').innerHTML = `
+        Menampilkan <strong>${filtered.length}</strong> transaksi &mdash; Total <strong>${totalItem}</strong> eksemplar
+      `;
+    }
+
+    function exportCSV() {
+      const historyData = JSON.parse(localStorage.getItem('historyStore')) || dataHistory;
+      const header = ['ID', 'Tanggal', 'No. DO', 'Pengguna', 'Bahan Ajar', 'Jumlah', 'Status'];
+      const rows = historyData.map(h => [h.id, h.tanggal, h.do, h.pengguna, h.bahanAjar, h.jumlah, h.status]);
+      const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `histori_transaksi_${new Date().toLocaleDateString('id-ID').replace(/\//g,'-')}.csv`;
+      a.click();
+    }
+
+    renderHistori();
+
+    // Real-time update from other tabs
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'historyStore') renderHistori();
+    });
+  </script>
+</body>
+</html>

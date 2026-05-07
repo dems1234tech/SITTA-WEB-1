@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Informasi Stok Bahan Ajar - SITTA</title>
+  <meta name="description" content="Kelola stok dan informasi bahan ajar Universitas Terbuka"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-brand"><span>⬡ SITTA</span></div>
+    <ul>
+      <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+      <li><a href="stok.html" class="active"><i class="fas fa-boxes"></i> Informasi Bahan Ajar</a></li>
+      <li><a href="tracking.html"><i class="fas fa-truck"></i> Tracking Pengiriman</a></li>
+      <li class="dropdown" id="laporanDropdown">
+        <a href="#" onclick="toggleDropdown(event)"><i class="fas fa-chart-bar"></i> Laporan ▾</a>
+        <div class="dropdown-content" id="laporanMenu">
+          <a href="histori.html"><i class="fas fa-history"></i> Histori Transaksi</a>
+          <a href="tracking.html"><i class="fas fa-shipping-fast"></i> Monitoring Progress DO</a>
+          <a href="stok.html"><i class="fas fa-book"></i> Rekap Bahan Ajar</a>
+        </div>
+      </li>
+      <li><a href="index.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- FLOATING CART -->
+  <div class="floating-cart" id="floatingCart" onclick="openCartModal()">
+    <i class="fas fa-shopping-cart"></i>
+    <span class="cart-badge" id="cartBadge">0</span>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="stok-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h1 style="font-size:22px; margin:0;"><i class="fas fa-boxes"></i> Informasi Bahan Ajar</h1>
+        <p style="color:var(--text-muted); margin:4px 0 0; font-size:14px;">Kelola stok dan informasi bahan ajar yang tersedia.</p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-small" id="viewGridBtn" onclick="setView('grid')"><i class="fas fa-th"></i> Grid</button>
+        <button class="btn btn-small" id="viewTableBtn" onclick="setView('table')" style="background:var(--surface); color:var(--text-main); border:1px solid var(--border);"><i class="fas fa-list"></i> Tabel</button>
+        <button class="btn btn-small" onclick="openAddModal()"><i class="fas fa-plus"></i> Tambah Bahan Ajar</button>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <i class="fas fa-search" style="color:var(--text-muted);"></i>
+        <input type="text" id="searchInput" placeholder="Cari nama atau kode barang..." oninput="renderStockGrid()" style="flex:1;"/>
+      </div>
+      <div class="filter-group small">
+        <select id="filterJenis" onchange="renderStockGrid()">
+          <option value="">Semua Jenis</option>
+          <option value="BMP">BMP</option>
+          <option value="Non-BMP">Non-BMP</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- GRID VIEW -->
+    <div id="gridView">
+      <div id="stockGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px;"></div>
+    </div>
+
+    <!-- TABLE VIEW -->
+    <div id="tableView" style="display:none;">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Kode Barang</th>
+              <th>Nama Bahan Ajar</th>
+              <th>Jenis</th>
+              <th>Edisi</th>
+              <th>Stok</th>
+              <th>Limit</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="stockTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TAMBAH BAHAN AJAR -->
+  <div class="modal" id="addModal">
+    <div class="modal-content" style="max-width:480px;">
+      <span class="close" onclick="closeModal('addModal')">&times;</span>
+      <h3><i class="fas fa-plus-circle"></i> Tambah Bahan Ajar Baru</h3>
+      <form id="addForm">
+        <label>Kode Lokasi</label>
+        <input type="text" id="addLokasi" placeholder="Contoh: 0JKT01" required/>
+        <label>Kode Barang</label>
+        <input type="text" id="addKode" placeholder="Contoh: EKMA4216" required/>
+        <label>Nama Bahan Ajar</label>
+        <input type="text" id="addNama" placeholder="Nama lengkap bahan ajar" required/>
+        <label>Jenis Barang</label>
+        <select id="addJenis">
+          <option value="BMP">BMP</option>
+          <option value="Non-BMP">Non-BMP</option>
+        </select>
+        <label>Edisi</label>
+        <input type="text" id="addEdisi" placeholder="Contoh: 3" required/>
+        <label>Jumlah Stok</label>
+        <input type="number" id="addStok" placeholder="Jumlah stok awal" min="0" required/>
+        <label>Batas Limit Stok</label>
+        <input type="number" id="addLimit" placeholder="Jumlah limit stok" min="1" required/>
+        <label>Upload Cover Buku</label>
+        <input type="file" id="addCover" accept="image/*"/>
+        <button type="submit" class="btn"><i class="fas fa-save"></i> Simpan Bahan Ajar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL KERANJANG -->
+  <div class="modal" id="cartModal">
+    <div class="modal-content" style="max-width:540px;">
+      <span class="close" onclick="closeModal('cartModal')">&times;</span>
+      <h3><i class="fas fa-shopping-cart"></i> Keranjang Pesanan</h3>
+      <div id="cartContent"></div>
+      <div id="cartFooter" style="display:none; margin-top:16px;">
+        <div style="display:flex; gap:10px;">
+          <button class="btn" style="background:var(--surface); color:var(--text-main); border:1px solid var(--border);" onclick="if(confirm('Hapus semua isi keranjang?')){saveCart([]); updateCartBadge(); renderCartContent();}"><i class="fas fa-trash-alt"></i> Hapus Semua</button>
+          <button class="btn" onclick="checkout()"><i class="fas fa-check-circle"></i> Checkout &amp; Buat Struk</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL HAPUS -->
+  <div class="modal" id="deleteModal">
+    <div class="modal-content" style="max-width:400px;">
+      <span class="close" onclick="closeModal('deleteModal')">&times;</span>
+      <h3><i class="fas fa-trash-alt" style="color:var(--danger);"></i> Hapus Bahan Ajar?</h3>
+      <p style="color:var(--text-muted);">Bahan ajar ini akan dihapus dari sistem.</p>
+      <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="btn btn-danger" id="confirmDeleteBtn"><i class="fas fa-trash"></i> Hapus</button>
+        <button class="btn" style="background:var(--surface); border:1px solid var(--border);" onclick="closeModal('deleteModal')">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL STRUK -->
+  <div class="modal" id="strukModal">
+    <div class="modal-content" style="max-width:480px;">
+      <span class="close" onclick="closeModal('strukModal')">&times;</span>
+      <div id="strukContent"></div>
+      <div style="margin-top:16px;">
+        <button class="btn" onclick="closeModal('strukModal')"><i class="fas fa-check"></i> Selesai</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tracking Pengiriman - SITTA</title>
+  <meta name="description" content="Lacak status pengiriman bahan ajar Universitas Terbuka"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-brand"><span>⬡ SITTA</span></div>
+    <ul>
+      <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+      <li><a href="stok.html"><i class="fas fa-boxes"></i> Informasi Bahan Ajar</a></li>
+      <li><a href="tracking.html" class="active"><i class="fas fa-truck"></i> Tracking Pengiriman</a></li>
+      <li class="dropdown" id="laporanDropdown">
+        <a href="#" onclick="toggleDropdown(event)"><i class="fas fa-chart-bar"></i> Laporan ▾</a>
+        <div class="dropdown-content" id="laporanMenu">
+          <a href="histori.html"><i class="fas fa-history"></i> Histori Transaksi</a>
+          <a href="tracking.html"><i class="fas fa-shipping-fast"></i> Monitoring Progress DO</a>
+          <a href="stok.html"><i class="fas fa-book"></i> Rekap Bahan Ajar</a>
+        </div>
+      </li>
+      <li><a href="index.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="tracking-container">
+    <h1><i class="fas fa-truck"></i> Tracking Pengiriman</h1>
+    <p style="color:var(--text-muted); margin-top:-10px; margin-bottom:24px;">Lacak status pengiriman berdasarkan Nomor DO.</p>
+
+    <!-- SEARCH FORM -->
+    <div class="filter-bar" style="margin-bottom:24px;">
+      <div class="filter-group">
+        <i class="fas fa-search" style="color:var(--text-muted);"></i>
+        <input type="text" id="doInput" placeholder="Masukkan Nomor DO (contoh: 2023001234)..." style="flex:1;"/>
+      </div>
+      <button class="btn" style="width:auto; padding:12px 24px;" onclick="cariDO()">
+        <i class="fas fa-search"></i> Lacak
+      </button>
+    </div>
+
+    <!-- TRACKING RESULT -->
+    <div id="trackingResult"></div>
+
+    <!-- DAFTAR DO AKTIF -->
+    <div style="margin-top:32px;">
+      <h2 style="font-size:18px;"><i class="fas fa-list-alt"></i> Daftar Billing Aktif</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>No. DO</th>
+              <th>Nama</th>
+              <th>Ekspedisi</th>
+              <th>Tgl Kirim</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="doListTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    // Auth check
+    if (sessionStorage.getItem('loggedIn') !== 'true') window.location.href = 'index.html';
+
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+      e.preventDefault(); sessionStorage.clear(); window.location.href = 'index.html';
+    });
+
+    function toggleDropdown(e) {
+      e.preventDefault();
+      document.getElementById('laporanDropdown').classList.toggle('show');
+    }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#laporanDropdown')) document.getElementById('laporanDropdown').classList.remove('show');
+    });
+
+    // Cek URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const doParam = urlParams.get('do');
+    if (doParam) {
+      document.getElementById('doInput').value = doParam;
+      setTimeout(() => cariDO(), 200);
+    }
+
+    function cariDO() {
+      const nomor = document.getElementById('doInput').value.trim();
+      const result = document.getElementById('trackingResult');
+
+      // Cek dari historyStore (transaksi baru)
+      const historyData = JSON.parse(localStorage.getItem('historyStore')) || dataHistory;
+      const trackingDB = JSON.parse(localStorage.getItem('trackingStore')) || dataTracking;
+
+      // Cek dari dataTracking static
+      if (trackingDB[nomor]) {
+        const data = trackingDB[nomor];
+        renderTracking(data, result);
+        return;
+      }
+
+      // Cek dari histori transaksi (DO baru dari checkout)
+      const trx = historyData.find(h => h.do === nomor);
+      if (trx) {
+        const now = new Date();
+        const dynamicData = {
+          nomorDO: nomor,
+          nama: trx.pengguna,
+          status: trx.status === 'Selesai' ? 'Terkirim' : 'Dalam Perjalanan',
+          ekspedisi: 'JNE',
+          tanggalKirim: trx.tanggal,
+          paket: trx.bahanAjar,
+          total: `${trx.jumlah} eksemplar`,
+          progress: trx.status === 'Selesai' ? 100 : 50,
+          perjalanan: [
+            { waktu: trx.tanggal + ' 09:00:00', keterangan: 'Penerimaan di Loket: TANGERANG SELATAN. Pengirim: Universitas Terbuka' },
+            { waktu: trx.tanggal + ' 13:00:00', keterangan: 'Tiba di Hub: TANGERANG SELATAN' },
+            trx.status === 'Selesai'
+              ? { waktu: trx.tanggal + ' 17:00:00', keterangan: `Selesai Antar. Penerima: ${trx.pengguna}` }
+              : { waktu: trx.tanggal + ' 14:30:00', keterangan: 'Diteruskan ke Kantor Tujuan' }
+          ]
+        };
+        renderTracking(dynamicData, result);
+        return;
+      }
+
+      result.innerHTML = `
+        <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; padding:20px; text-align:center; color:#ef4444;">
+          <i class="fas fa-times-circle" style="font-size:32px; margin-bottom:8px;"></i>
+          <p style="margin:0; font-weight:600;">Nomor DO tidak ditemukan!</p>
+          <p style="font-size:13px; color:var(--text-muted); margin:4px 0 0;">Pastikan nomor DO yang Anda masukkan benar.</p>
+        </div>`;
+    }
+
+    function renderTracking(data, container) {
+      const statusClass = data.progress === 100 ? 'badge-success' : data.progress >= 50 ? 'badge-warning' : 'badge-info';
+      const perjalananHTML = data.perjalanan.map((p, i) => `
+        <li class="timeline-item ${i === data.perjalanan.length - 1 ? 'active' : ''}">
+          <div class="timeline-date">${p.waktu}</div>
+          <div class="timeline-content">
+            <p>${p.keterangan}</p>
+          </div>
+        </li>
+      `).join('');
+
+      container.innerHTML = `
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; margin-bottom:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h4 style="margin:0; color:var(--text-muted); font-size:13px; font-family:'Inter',sans-serif;">NO. DO: ${data.nomorDO}</h4>
+              <h2 style="margin:4px 0 0;">${data.nama}</h2>
+            </div>
+            <span class="badge ${statusClass}" style="font-size:14px; padding:8px 16px;">${data.status}</span>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:20px;">
+            <div style="background:rgba(255,255,255,0.04); padding:14px; border-radius:10px; border:1px solid var(--border);">
+              <p style="color:var(--text-muted); font-size:12px; margin:0 0 4px;">Ekspedisi</p>
+              <p style="font-weight:700; margin:0;">${data.ekspedisi}</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.04); padding:14px; border-radius:10px; border:1px solid var(--border);">
+              <p style="color:var(--text-muted); font-size:12px; margin:0 0 4px;">Tgl Kirim</p>
+              <p style="font-weight:700; margin:0;">${data.tanggalKirim}</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.04); padding:14px; border-radius:10px; border:1px solid var(--border);">
+              <p style="color:var(--text-muted); font-size:12px; margin:0 0 4px;">Total</p>
+              <p style="font-weight:700; margin:0;">${data.total}</p>
+            </div>
+          </div>
+          <div style="margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+              <span style="color:var(--text-muted);">Progress Pengiriman</span>
+              <span style="font-weight:700; color:var(--secondary);">${data.progress}%</span>
+            </div>
+            <div class="progress-container" style="height:12px;">
+              <div class="progress-bar" style="width:${data.progress}%; background:${data.progress===100?'var(--success)':data.progress>=50?'var(--warning)':'var(--info)'};"></div>
+            </div>
+          </div>
+          <h3 style="font-size:16px;">Riwayat Perjalanan</h3>
+          <ul class="timeline">${perjalananHTML}</ul>
+        </div>`;
+    }
+
+    // Render daftar DO
+    function renderDOList() {
+      const trackingDB = JSON.parse(localStorage.getItem('trackingStore')) || dataTracking;
+      const tbody = document.getElementById('doListTable');
+      const entries = Object.values(trackingDB);
+      if (!entries.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Tidak ada data DO</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = entries.map(d => {
+        const sc = d.progress === 100 ? 'success' : d.progress >= 50 ? 'warning' : 'info';
+        return `
+          <tr>
+            <td><code style="color:var(--secondary);">${d.nomorDO}</code></td>
+            <td>${d.nama}</td>
+            <td>${d.ekspedisi}</td>
+            <td>${d.tanggalKirim}</td>
+            <td><span class="badge badge-${sc}">${d.status}</span></td>
+            <td>
+              <div class="progress-container" style="width:120px; height:6px; display:inline-block;">
+                <div class="progress-bar" style="width:${d.progress}%; background:${d.progress===100?'var(--success)':d.progress>=50?'var(--warning)':'var(--info)'};"></div>
+              </div>
+              <span style="font-size:12px; margin-left:8px;">${d.progress}%</span>
+            </td>
+            <td>
+              <button class="btn btn-small" onclick="document.getElementById('doInput').value='${d.nomorDO}'; cariDO(); window.scrollTo({top:0,behavior:'smooth'});">
+                <i class="fas fa-search"></i> Lacak
+              </button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    renderDOList();
+
+    // Real-time update from other tabs
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'trackingStore' || e.key === 'historyStore') {
+        renderDOList();
+        if (document.getElementById('doInput').value) cariDO();
+      }
+    });
+  </script>
+</body>
+</html>
